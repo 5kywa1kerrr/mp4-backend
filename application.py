@@ -117,9 +117,31 @@ def insert_data_into_db(payload):
     NOTE: Our autograder will automatically insert data into the DB automatically keeping in mind the explained SCHEMA, you dont have to insert your own data.
     """
     create_db_table()
-    # TODO: Implement the database call    
     
-    raise NotImplementedError("Database insert function not implemented.")
+    title = payload.get("title")
+    date = payload.get("date")
+    description = payload.get("description")
+    image_url = payload.get("image_url")
+    location = payload.get("location")
+
+    if not title or not date:
+        raise ValueError("Title and Date are required fields.")
+    
+    insert_sql = """
+        INSERT INTO events (title, description, image_url, date, location)
+        VALUES (%s, %s, %s, %s, %s)
+    """
+
+    try:
+        with get_db_connection() as connection:
+            with connection.cursor() as cursor:
+                cursor.execute(insert_sql, (title, description, image_url, date, location))
+            connection.commit()
+            logging.info("Event inserted successfully")
+    except Exception as e:
+        logging.exception("Failed to insert event into the database")
+        raise RuntimeError(f"Data insertion failed: {str(e)}")
+    
 
 #Database Function Stub
 def fetch_data_from_db():
@@ -127,9 +149,39 @@ def fetch_data_from_db():
     Stub for database communication.
     Implement this function to fetch your data from the database.
     """
-    # TODO: Implement the database call
+    create_db_table()
+
+    select_sql = """
+        SELECT title, description, image_url, date, location
+        FROM events
+        ORDER BY date ASC, id ASC
+    """
     
-    raise NotImplementedError("Database fetch function not implemented.")
+    try:
+        with get_db_connection() as connection:
+            with connection.cursor() as cursor:
+                cursor.execute(select_sql)
+                results = cursor.fetchall()
+                
+        results = []
+        for (title, description, image_url, date, location) in rows:
+            if date is None:
+                date_out = None
+            else:
+                date_out = date.strftime("%a, %d %b %Y 00:00:00 GMT")
+            
+            results.append({
+                "date": date_out,
+                "title": title,
+                "description": description,
+                "location": location,
+                "image_url": image_url
+            })
+
+        return results
+    except Exception as e:
+        logging.exception("Failed to fetch data from the database")
+        raise RuntimeError(f"Data retrieval failed: {str(e)}")
 
 if __name__ == '__main__':
     application.run(host='0.0.0.0', port=int(os.environ.get('PORT', 5000)))
