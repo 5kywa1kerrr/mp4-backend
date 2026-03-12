@@ -161,7 +161,7 @@ def fetch_data_from_db():
         with get_db_connection() as connection:
             with connection.cursor() as cursor:
                 cursor.execute(select_sql)
-                results = cursor.fetchall()
+                rows = cursor.fetchall()
                 
         results = []
         for (title, description, image_url, date, location) in rows:
